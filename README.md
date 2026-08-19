@@ -11,7 +11,7 @@ autenticação JWT, e DFD básico com trust boundaries e análise CIA.
 - Yohann Matheus Gusso Guedes
 
 ## Estrutura do repositório
-- `data/` — dataset original (`raw/`) e dataset tratado após a limpeza (`processed/`)
-- `data-analysis/` — EDA, notebook com análise
-- `backend/` — API FastAPI 
-- `security/` — DFD (Data Flow Diagram) e análise CIA 
+- `data/` — dataset original (`customer_support_tickets.csv`)
+- `eda/` — notebook (`.ipynb`) com a análise exploratória completa (EDA)
+- `fastapi/` — código-fonte da API FastAPI (rotas, models, security)
+- `others/` — DFD (Data Flow Diagram) em formato `.png` e documentação
