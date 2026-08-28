@@ -1,7 +1,7 @@
 from datetime import datetime
 from random import choice
 
-from models.user import Prediction, PredictionCreate, PredictionResponse
+from models.prediction import Prediction, PredictionCreate, PredictionResponse
 from security.auth import get_current_user
 
 from fastapi import APIRouter, Depends, status
