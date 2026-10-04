@@ -4,13 +4,10 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict
 from sqlmodel import Field, SQLModel
 
-NAMESPACE = uuid.NAMESPACE_DNS
-TARGET_NAME = "prediction"
-
 
 class Prediction(SQLModel, table=True):
     prediction_id: uuid.UUID = Field(
-        default_factory=lambda: uuid.uuid5(NAMESPACE, TARGET_NAME), primary_key=True
+        default_factory=uuid.uuid4, unique=True, primary_key=True
     )
     owner_id: uuid.UUID = Field(foreign_key="user.user_id", ondelete="CASCADE")
     text: str

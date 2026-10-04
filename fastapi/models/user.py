@@ -4,16 +4,12 @@ from enum import Enum
 from pydantic import BaseModel, ConfigDict, EmailStr
 from sqlmodel import Field, SQLModel
 
-NAMESPACE = uuid.NAMESPACE_DNS
-TARGET_NAME = "user"
-
-
 UserRole = Enum("UserRole", [("DEFAULT", 0), ("ADMIN", 1)])
 
 
 class User(SQLModel, table=True):
     user_id: uuid.UUID = Field(
-        default_factory=lambda: uuid.uuid5(NAMESPACE, TARGET_NAME),
+        default_factory=uuid.uuid4,
         unique=True,
         primary_key=True,
     )
