@@ -1,10 +1,10 @@
 import uvicorn
 from database import engine
-from routes import auth, health, prediction
-from slowapi import Limiter, _rate_limit_exceeded_handler
+from limiter import limiter
+from routes import auth, health, prediction, user
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
-from slowapi.util import get_remote_address
 from sqlmodel import SQLModel
 
 from fastapi import FastAPI, Request
@@ -24,7 +24,6 @@ app.add_middleware(
     allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
 )
 
-limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_middleware(SlowAPIMiddleware)
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
@@ -46,6 +45,7 @@ async def security_headers(request: Request, call_next):
 
 
 app.include_router(auth.auth_router)
+app.include_router(user.user_router)
 app.include_router(health.health_router)
 app.include_router(prediction.prediction_router)
 

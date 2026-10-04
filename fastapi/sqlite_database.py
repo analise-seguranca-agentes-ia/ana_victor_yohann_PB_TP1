@@ -67,7 +67,7 @@ def init_and_seed_db():
         """,
             (
                 normal_id,
-                "Jane Doe",
+                "janedoe",
                 roles_normal,
                 "janedoe@example.com",
                 "Jane Doe",

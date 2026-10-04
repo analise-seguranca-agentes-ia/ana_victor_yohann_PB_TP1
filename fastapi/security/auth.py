@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
-from typing import Annotated
 
 import jwt
+from database import get_session
 from jwt.exceptions import InvalidTokenError
 from models.auth import TokenData
 from models.user import PostUserLoginRequest, User
@@ -22,11 +22,10 @@ ADMIN_PASSWORD = "dumbpassword"
 
 password_hash = PasswordHash.recommended()
 
-admin_user = User(
-    username=ADMIN_USERNAME,
-    email=ADMIN_EMAIL,
-    full_name=ADMIN_FULL_NAME,
-    hashed_password=password_hash.hash(ADMIN_PASSWORD),
+credentials_exception = HTTPException(
+    status_code=status.HTTP_401_UNAUTHORIZED,
+    detail="Could not validate user credentials.",
+    headers={"WWW-Authenticate": "Bearer"},
 )
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
@@ -74,24 +73,30 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     return encoded_jwt
 
 
-async def get_current_user(
-    token: Annotated[str, Depends(oauth2_scheme)], session: Session
-):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate user credentials.",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
+async def verify_access_token(
+    token: str = Depends(oauth2_scheme),
+) -> TokenData:
 
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+
         username = payload.get("sub")
 
-        if username is None:
+        if not username:
             raise credentials_exception
 
         token_data = TokenData(username=username)
+
+        return token_data
     except InvalidTokenError:
+        raise credentials_exception
+
+
+async def get_current_user(
+    token_data: TokenData = Depends(verify_access_token),
+    session: Session = Depends(get_session),
+):
+    if not token_data.username:
         raise credentials_exception
 
     user = get_user(token_data.username, session)

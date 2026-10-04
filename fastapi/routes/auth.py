@@ -1,8 +1,7 @@
 from datetime import timedelta
-from typing import Annotated
 
 from database import get_session
-from main import limiter
+from limiter import limiter
 from models.auth import Token
 from models.user import PostUserLoginRequest, PostUserRegisterRequest, User
 from security.auth import (ACCESS_TOKEN_EXPIRE_MINUTES, authenticate_user,
@@ -19,8 +18,8 @@ auth_router = APIRouter(prefix="/auth", tags=["auth"])
 @limiter.limit("10/minute")
 async def login_get_token(
     request: Request,
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    session: Annotated[Session, Depends(get_session)],
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    session: Session = Depends(get_session),
 ) -> Token:
     user = authenticate_user(
         PostUserLoginRequest(username=form_data.username, password=form_data.password),
@@ -37,8 +36,8 @@ async def login_get_token(
 
 @auth_router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register_user(
-    new_user: Annotated[PostUserRegisterRequest, Body()],
-    session: Annotated[Session, Depends(get_session)],
+    new_user: PostUserRegisterRequest = Body(),
+    session: Session = Depends(get_session),
 ):
     found_user = get_user(new_user.username, session)
 

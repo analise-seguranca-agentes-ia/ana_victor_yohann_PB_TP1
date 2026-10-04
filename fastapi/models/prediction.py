@@ -22,5 +22,6 @@ class PostPredictionRequest(BaseModel):
 
 
 class GetPredictionResponse(BaseModel):
+    prediction_id: uuid.UUID
     text: str
     intention: str
