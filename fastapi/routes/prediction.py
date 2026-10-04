@@ -1,12 +1,17 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from random import choice
+from typing import Annotated
 
-from models.prediction import Prediction, PredictionCreate, PredictionResponse
+from database import get_session
+from models.prediction import (GetPredictionResponse, PostPredictionRequest,
+                               Prediction)
+from models.user import User
 from security.auth import get_current_user
+from sqlmodel import Session, select
 
 from fastapi import APIRouter, Depends, status
 
-router = APIRouter(prefix="/predict", tags=["prediction"])
+prediction_router = APIRouter(prefix="/predict", tags=["prediction"])
 
 
 user_intentions = [
@@ -17,17 +22,42 @@ user_intentions = [
 ]
 
 
-@router.post(
-    "/",
-    response_model=PredictionResponse,
+@prediction_router.post(
+    "",
+    response_model=GetPredictionResponse,
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(get_current_user)],
 )
-async def predict_intention(text: PredictionCreate):
-    user_intention = Prediction(
+async def predict_intention(
+    text: PostPredictionRequest,
+    session: Annotated[Session, Depends(get_session)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    user_intent = Prediction(
+        owner_id=current_user.user_id,
         text=text.text,
         intention=choice(user_intentions),
-        created_at=datetime.now(),
+        created_at=datetime.now(UTC),
     )
 
-    return user_intention
+    session.add(user_intent)
+    session.commit()
+    session.refresh(user_intent)
+
+    return user_intent
+
+
+@prediction_router.get(
+    "",
+    response_model=list[GetPredictionResponse],
+    dependencies=[Depends(get_current_user)],
+)
+async def get_user_predictions(
+    session: Annotated[Session, Depends(get_session)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    predictions = session.exec(
+        select(Prediction).where(Prediction.owner_id == current_user.user_id)
+    )
+
+    return predictions

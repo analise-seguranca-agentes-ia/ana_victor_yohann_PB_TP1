@@ -4,8 +4,9 @@ from typing import Annotated
 import jwt
 from jwt.exceptions import InvalidTokenError
 from models.auth import TokenData
-from models.user import User
+from models.user import PostUserLoginRequest, User
 from pwdlib import PasswordHash
+from sqlmodel import Session, select
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -35,14 +36,28 @@ def verify_password(input_password: str, hashed_password: str) -> bool:
     return password_hash.verify(input_password, hashed_password)
 
 
-def authenticate_user(username: str, password: str) -> User | None:
-    if username != ADMIN_USERNAME:
-        return None
+def get_hash_password(password: str) -> str:
+    return password_hash.hash(password)
 
-    if not verify_password(password, admin_user.hashed_password):
-        return None
 
-    return admin_user
+def get_user(username: str, session: Session) -> User | None:
+    return session.exec(select(User).where(User.username == username)).first()
+
+
+def authenticate_user(login: PostUserLoginRequest, session: Session) -> User:
+    found_user = get_user(login.username, session)
+
+    if not found_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User could not be found."
+        )
+
+    if not verify_password(login.password, found_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials."
+        )
+
+    return found_user
 
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
@@ -59,7 +74,9 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     return encoded_jwt
 
 
-async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
+async def get_current_user(
+    token: Annotated[str, Depends(oauth2_scheme)], session: Session
+):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate user credentials.",
@@ -77,7 +94,8 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
     except InvalidTokenError:
         raise credentials_exception
 
-    user = admin_user.model_copy()
+    user = get_user(token_data.username, session)
+
     if user is None:
         raise credentials_exception
 
