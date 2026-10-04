@@ -138,10 +138,17 @@ No Linux/macOS, use `python3 main.py` caso `python` não esteja disponível.
 
 #### Autenticação
 
-Para testar a rota protegida `/predict`, autentique-se via `/auth/token` ou use o botão `Authorize` no Swagger com o seguinte usuário admin:
+Para testar a rota protegida `/predict`, autentique-se via `/auth/token` ou use o botão `Authorize` no Swagger com um dos seguintes usuários:
 
-Username: `admin-v01`
-Password: `dumbpassword`
+##### Usuário admin:
+
+Username: `johndoe`
+Password: `johndoe123`
+
+##### Usuário normal
+
+Username: `janedoe`
+Password: `janedoe123`
 
 ## DFD e Tríade CIA
 
